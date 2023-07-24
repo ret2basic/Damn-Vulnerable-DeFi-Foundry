@@ -67,7 +67,6 @@ contract AttackContract {
     }
 
     function onERC721Received(address, address, uint256 _tokenId, bytes memory) external returns (bytes4) {
-        console.log("Sending NFT to the buyer to get job payout.");
         return IERC721Receiver.onERC721Received.selector;
     }
 
